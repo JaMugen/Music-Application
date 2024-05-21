@@ -16,9 +16,10 @@ Allows for the converting of large image formats down to ico format.
 ><https://docs.python.org/3/library/tkinter.html#a-hello-world-program>
 
 ``` python
-root = tk.TK()
-app = defined_class(root)
-root.mainloop()
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = MusicApplication(root)
+    root.mainloop()
 ```
 
 First initialize tkinter with the first line.
