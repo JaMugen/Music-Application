@@ -14,7 +14,7 @@ Allows for the converting of large image formats down to ico format.
 ### rescources
 ><https://www.tutorialspoint.com/python/python_gui_programming.htm>
 ><https://docs.python.org/3/library/tkinter.html#a-hello-world-program>
-
+><https://github.com/TomSchimansky/CustomTkinter/wiki/CTkButton>
 ``` python
 if __name__ == "__main__":
     root = tk.Tk()
