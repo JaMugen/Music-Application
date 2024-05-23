@@ -28,6 +28,7 @@ class MusicApplication:
 
         self.paused = False
         self.current_song = None
+        self.manually_paused = False
 
         self.background = ctk.CTkImage(dark_image=Image.open(r"Images\Minecraft Wallpaper.jpg"), size=(screen_width, screen_height))
         self.pause_icon = ctk.CTkImage(dark_image=Image.open(r"Icons\pause2.png"), size=(25,25))
@@ -68,6 +69,7 @@ class MusicApplication:
         self.load_button = ctk.CTkButton(self.left_frame, text="Load Songs", command=self.load_songs, fg_color="green", text_color="white", font=('arial', 12))
         self.load_button.pack(side=ctk.BOTTOM, pady=10)
 
+        self.root.after(100, self.check_for_song_end)
 
     def load_songs(self):
         folder_selected = filedialog.askdirectory()
@@ -99,6 +101,7 @@ class MusicApplication:
             pygame.mixer.music.unpause()
             self.pause_and_play_button.configure(image=self.pause_icon)
             self.paused = False
+            self.manually_paused = False
         else:
             pygame.mixer.music.pause()
             self.pause_and_play_button.configure(image=self.play_icon)
@@ -110,7 +113,25 @@ class MusicApplication:
         self.pause_and_play_button.configure(image=self.play_icon)
         self.current_song = None
 
-        
+    def check_for_song_end(self):
+        if not pygame.mixer.music.get_busy() and not self.paused and self.current_song:
+            self.play_next_song()
+        self.root.after(100, self.check_for_song_end)
+
+    def play_next_song(self):
+        current_selection = self.songs_listbox.curselection()
+
+        if current_selection:
+            next_index = (current_selection[0] + 1) % len(self.songs_listbox.get(0,ctk.END))
+        else:
+            next_index = 0
+            
+        self.songs_listbox.select_clear(0,ctk.END)
+        self.songs_listbox.select_set(next_index)
+        self.songs_listbox.activate(next_index)
+        next_song = self.songs_listbox.get(next_index)
+        self.start_song(next_song)
+
 if __name__ == "__main__":
     root = ctk.CTk()
     app = MusicApplication(root)
