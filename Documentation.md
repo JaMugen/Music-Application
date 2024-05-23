@@ -25,3 +25,7 @@ if __name__ == "__main__":
 First initialize tkinter with the first line.
 Then define the application as an object of a class that defines the app functionality.
 Lastly the method "mainloop" will keep continually update the app, allowing for input registration and changes.
+
+## Extra Resources
+><https://www.tutorialspoint.com/python/index.htm>
+><https://code.visualstudio.com/docs/python/python-tutorial#_next-steps>

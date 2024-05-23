@@ -1,7 +1,8 @@
 import os
 import customtkinter as ctk
+
 import tkinter as tk
-from tkinter import NW, filedialog, messagebox
+from tkinter import NSEW, NW, filedialog, messagebox
 import pygame
 from PIL import Image 
 
@@ -11,11 +12,17 @@ class MusicApplication:
         self.root.title("Music Application")
         self.root.geometry("600x400")
 
+        self.root.after(0, lambda: root.wm_state('zoomed'))
+
         ctk.set_appearance_mode("dark")
         self.font = "Convection Bold"
 
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
+
+        self.root.grid_rowconfigure((1), weight = 1, minsize = 800)
+        self.root.grid_columnconfigure((1,2),weight = 1, minsize = 600)
+
 
         pygame.mixer.init()
 
@@ -23,24 +30,25 @@ class MusicApplication:
         self.current_song = None
 
         self.background = ctk.CTkImage(dark_image=Image.open(r"Images\Minecraft Wallpaper.jpg"), size=(screen_width, screen_height))
-        self.pause_icon = ctk.CTkImage(dark_image=Image.open(r"Icons\pause.png"), size=(25,25))
+        self.pause_icon = ctk.CTkImage(dark_image=Image.open(r"Icons\pause2.png"), size=(25,25))
         self.play_icon = ctk.CTkImage(dark_image=Image.open(r"Icons\play2.png"), size=(25,25))
         self.stop_icon = ctk.CTkImage(dark_image=Image.open(r"Icons\media-playback-stop.256x256.png"), size=(25,25))
 
         self.wallpaper = ctk.CTkLabel(root, image=self.background, text="")
-        self.wallpaper.grid(row=0, column=0)
+        self.wallpaper.grid(row=0, column=0, 
+                            columnspan = 4, rowspan = 3)
 
-        self.main_frame = ctk.CTkFrame(root, width = screen_width, height = screen_height // 1.75)
-        self.main_frame.place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
+        self.main_frame = ctk.CTkFrame(root)
+        self.main_frame.grid(column = 1, columnspan = 2,  row = 1, sticky = NSEW, pady = screen_height // 6.5,  padx = screen_width // 6)
+
+        self.main_frame.grid_rowconfigure((1), weight = 1)
+        self.main_frame.grid_columnconfigure((1,2), weight = 1)
 
         self.left_frame = ctk.CTkFrame(self.main_frame)
-        self.left_frame.pack(side=ctk.LEFT, fill=ctk.BOTH, expand=True, padx=10, pady=10)
+        self.left_frame.grid(row = 1, column = 1, sticky = NSEW)
 
-        self.right_frame = ctk.CTkFrame(self.main_frame)
-        self.right_frame.pack(side=ctk.RIGHT, fill=ctk.BOTH, expand=True, padx=10, pady=10)
-
-        self.songs_listbox = tk.Listbox(self.right_frame, selectmode=ctk.SINGLE, bg="black", fg="white", font=('arial', 12), width=30, height=15)
-        self.songs_listbox.pack(expand=True, fill=ctk.BOTH)
+        self.songs_listbox = tk.Listbox(self.main_frame, selectmode=ctk.SINGLE, bg="black", fg="white", font=('arial', 12))
+        self.songs_listbox.grid(row = 1, column = 2, sticky= NSEW)
         self.songs_listbox.bind("<<ListboxSelect>>", self.on_song_select)
         self.songs_listbox.bind("<Return>", self.on_song_select)
 
@@ -57,10 +65,9 @@ class MusicApplication:
                                          text="")
         self.stop_button.pack(side=ctk.LEFT, padx=5)
 
-        self.load_button = ctk.CTkButton(self.right_frame, text="Load Songs", command=self.load_songs, fg_color="green", text_color="white", font=('arial', 12))
+        self.load_button = ctk.CTkButton(self.left_frame, text="Load Songs", command=self.load_songs, fg_color="green", text_color="white", font=('arial', 12))
         self.load_button.pack(side=ctk.BOTTOM, pady=10)
 
-        self.root.after(0, lambda: root.wm_state('zoomed'))
 
     def load_songs(self):
         folder_selected = filedialog.askdirectory()
