@@ -1,10 +1,8 @@
 import os
 import customtkinter as ctk
-
-import tkinter as tk
 from tkinter import NSEW, NW, filedialog, messagebox
 import pygame
-from PIL import Image 
+from PIL import Image
 
 class MusicApplication:
     def __init__(self, root):
@@ -20,9 +18,8 @@ class MusicApplication:
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
 
-        self.root.grid_rowconfigure((1), weight = 1, minsize = 800)
-        self.root.grid_columnconfigure((1,2),weight = 1, minsize = 600)
-
+        self.root.grid_rowconfigure((1), weight=1, minsize=800)
+        self.root.grid_columnconfigure((1, 2), weight=1, minsize=600)
 
         pygame.mixer.init()
 
@@ -31,42 +28,42 @@ class MusicApplication:
         self.manually_paused = False
 
         self.background = ctk.CTkImage(dark_image=Image.open(r"Images\Minecraft Wallpaper.jpg"), size=(screen_width, screen_height))
-        self.pause_icon = ctk.CTkImage(dark_image=Image.open(r"Icons\pause2.png"), size=(25,25))
-        self.play_icon = ctk.CTkImage(dark_image=Image.open(r"Icons\play2.png"), size=(25,25))
-        self.stop_icon = ctk.CTkImage(dark_image=Image.open(r"Icons\media-playback-stop.256x256.png"), size=(25,25))
+        self.pause_icon = ctk.CTkImage(dark_image=Image.open(r"Icons\pause2.png"), size=(25, 25))
+        self.play_icon = ctk.CTkImage(dark_image=Image.open(r"Icons\play2.png"), size=(25, 25))
+        self.stop_icon = ctk.CTkImage(dark_image=Image.open(r"Icons\media-playback-stop.256x256.png"), size=(25, 25))
 
-        self.wallpaper = ctk.CTkLabel(root, image=self.background, text="")
-        self.wallpaper.grid(row=0, column=0, 
-                            columnspan = 4, rowspan = 3)
+        self.wallpaper = ctk.CTkLabel(self.root, image=self.background, text="Now Playing", 
+                                      font=(self.font, 28), text_color="White")
+        self.wallpaper.grid(row=0, column=0, columnspan=4, rowspan=3)
 
-        self.main_frame = ctk.CTkFrame(root)
-        self.main_frame.grid(column = 1, columnspan = 2,  row = 1, sticky = NSEW, pady = screen_height // 6.5,  padx = screen_width // 6)
+        self.main_frame = ctk.CTkFrame(self.root, fg_color="white")
+        self.main_frame.grid(column=1, columnspan=2, row=1, sticky=NSEW, pady=(screen_height // 6.5), padx=screen_width // 6)
 
-        self.main_frame.grid_rowconfigure((1), weight = 1)
-        self.main_frame.grid_columnconfigure((1,2), weight = 1)
 
-        self.left_frame = ctk.CTkFrame(self.main_frame)
-        self.left_frame.grid(row = 1, column = 1, sticky = NSEW)
+        self.main_frame.grid_rowconfigure((0), weight=1)
+        self.main_frame.grid_columnconfigure((0, 1), weight=1)
 
-        self.songs_listbox = tk.Listbox(self.main_frame, selectmode=ctk.SINGLE, bg="black", fg="white", font=('arial', 12))
-        self.songs_listbox.grid(row = 1, column = 2, sticky= NSEW)
-        self.songs_listbox.bind("<<ListboxSelect>>", self.on_song_select)
-        self.songs_listbox.bind("<Return>", self.on_song_select)
+        self.playback_and_display = ctk.CTkFrame(self.main_frame, fg_color = "white")
+        self.playback_and_display.grid(row=0, column=0, sticky=NSEW)
 
-        self.playback_menu = ctk.CTkFrame(self.left_frame)
+        self.scrollable_frame = ctk.CTkScrollableFrame(self.main_frame, fg_color="white", corner_radius=0)
+        self.scrollable_frame.grid(row=0, column=1, sticky= NSEW)
+
+        self.playback_menu = ctk.CTkFrame(self.playback_and_display, fg_color = "transparent")
         self.playback_menu.pack(side=ctk.TOP, pady=10, anchor=NW)
 
         self.pause_and_play_button = ctk.CTkButton(self.playback_menu, image=self.play_icon, command=self.pause_or_play_song, 
-                                                   width=50, height=50, border_color="black", border_width=1,
-                                                   fg_color="grey", text="")
+                                                   width=50, height=50, border_color="black", border_width=2,
+                                                   fg_color="transparent", text="")
         self.pause_and_play_button.pack(side=ctk.LEFT, padx=5)
 
         self.stop_button = ctk.CTkButton(self.playback_menu, image=self.stop_icon, command=self.stop_song, 
-                                         width=50, height=50, border_color="black", border_width=1,
-                                         text="")
+                                         width=50, height=50, border_color="black", border_width=2, 
+                                         fg_color = "transparent" , text="")
         self.stop_button.pack(side=ctk.LEFT, padx=5)
 
-        self.load_button = ctk.CTkButton(self.left_frame, text="Load Songs", command=self.load_songs, fg_color="green", text_color="white", font=('arial', 12))
+        self.load_button = ctk.CTkButton(self.playback_and_display, text="Load Songs", command=self.load_songs, fg_color="green", text_color="white", 
+                                        font=(self.font, 12))
         self.load_button.pack(side=ctk.BOTTOM, pady=10)
 
         self.root.after(100, self.check_for_song_end)
@@ -76,13 +73,18 @@ class MusicApplication:
         if folder_selected:
             os.chdir(folder_selected)
             songs = os.listdir(folder_selected)
-            self.songs_listbox.delete(0, ctk.END)
+            for widget in self.scrollable_frame.winfo_children():
+                widget.destroy()  
             for song in songs:
                 if song.endswith(".mp3"):
-                    self.songs_listbox.insert(ctk.END, song)
+                    song_button = ctk.CTkButton(self.scrollable_frame, text=song, 
+                                                command=lambda s=song: self.start_song(s),
+                                                fg_color="transparent", border_color = "black", border_width= 1, 
+                                                text_color= "black", corner_radius=0, hover_color="lightgray")
+                    song_button.pack(fill=ctk.X)
 
     def on_song_select(self, event):
-        selected_song = self.songs_listbox.get(ctk.ACTIVE)
+        selected_song = event.widget.cget("text")
         if selected_song:
             self.start_song(selected_song)
 
@@ -91,6 +93,7 @@ class MusicApplication:
             if song != self.current_song:
                 self.current_song = song
                 pygame.mixer.music.load(song)
+                print(f"Starting {self.current_song}")
                 pygame.mixer.music.play()
                 self.pause_and_play_button.configure(image=self.pause_icon)
         except Exception as e:
@@ -119,18 +122,17 @@ class MusicApplication:
         self.root.after(100, self.check_for_song_end)
 
     def play_next_song(self):
-        current_selection = self.songs_listbox.curselection()
-
+        current_selection = [index for index, widget in enumerate(self.scrollable_frame.winfo_children()) if widget.cget("text") == self.current_song]
         if current_selection:
-            next_index = (current_selection[0] + 1) % len(self.songs_listbox.get(0,ctk.END))
+            next_index = (current_selection[0] + 1) % len(self.scrollable_frame.winfo_children())
         else:
             next_index = 0
-            
-        self.songs_listbox.select_clear(0,ctk.END)
-        self.songs_listbox.select_set(next_index)
-        self.songs_listbox.activate(next_index)
-        next_song = self.songs_listbox.get(next_index)
+        next_song_button = self.scrollable_frame.winfo_children()[next_index]
+        next_song = next_song_button.cget("text")
+        print(f"Switching to {next_song}")
         self.start_song(next_song)
+        
+        
 
 if __name__ == "__main__":
     root = ctk.CTk()
