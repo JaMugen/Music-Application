@@ -1,6 +1,6 @@
 import os
 import customtkinter as ctk
-from tkinter import NSEW, NW, filedialog, messagebox
+from tkinter import BOTH, X, NSEW, NW, Y, filedialog, messagebox
 import pygame
 from PIL import Image
 
@@ -13,7 +13,7 @@ class MusicApplication:
         self.root.after(0, lambda: root.wm_state('zoomed'))
 
         ctk.set_appearance_mode("dark")
-        self.font = "Convection Bold"
+        self.font = "Convection"
 
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
@@ -43,28 +43,37 @@ class MusicApplication:
         self.main_frame.grid_rowconfigure((0), weight=1)
         self.main_frame.grid_columnconfigure((0, 1), weight=1)
 
-        self.playback_and_display = ctk.CTkFrame(self.main_frame, fg_color = "white")
+        self.playback_and_display = ctk.CTkFrame(self.main_frame, fg_color = "white",
+                                                 border_color="black", border_width=1, corner_radius=0)
         self.playback_and_display.grid(row=0, column=0, sticky=NSEW)
 
         self.scrollable_frame = ctk.CTkScrollableFrame(self.main_frame, fg_color="white", corner_radius=0)
         self.scrollable_frame.grid(row=0, column=1, sticky= NSEW)
 
-        self.playback_menu = ctk.CTkFrame(self.playback_and_display, fg_color = "transparent")
-        self.playback_menu.pack(side=ctk.TOP, pady=10, anchor=NW)
+        self.playback_menu = ctk.CTkFrame(self.playback_and_display, fg_color = "transparent", 
+                                          border_color="black", border_width=1, corner_radius=0)
+        self.playback_menu.pack(side=ctk.TOP, anchor = ctk.NW, ipady = 20, fill = X)
 
         self.pause_and_play_button = ctk.CTkButton(self.playback_menu, image=self.play_icon, command=self.pause_or_play_song, 
-                                                   width=50, height=50, border_color="black", border_width=2,
-                                                   fg_color="transparent", text="")
-        self.pause_and_play_button.pack(side=ctk.LEFT, padx=5)
+                                                   width=80, height=50, border_color="black", border_width=1,
+                                                   fg_color="transparent", text="", corner_radius=0, hover_color="lightgreen")
+        self.pause_and_play_button.pack(side = ctk.LEFT, padx = (20,0))
 
         self.stop_button = ctk.CTkButton(self.playback_menu, image=self.stop_icon, command=self.stop_song, 
-                                         width=50, height=50, border_color="black", border_width=2, 
-                                         fg_color = "transparent" , text="")
-        self.stop_button.pack(side=ctk.LEFT, padx=5)
+                                         width=80, height=50, border_color="black", border_width=1, 
+                                         fg_color = "transparent" , text="", corner_radius=0, hover_color="lightgreen")
+        self.stop_button.pack(side=ctk.LEFT , padx=5)
 
-        self.load_button = ctk.CTkButton(self.playback_and_display, text="Load Songs", command=self.load_songs, fg_color="green", text_color="white", 
-                                        font=(self.font, 12))
-        self.load_button.pack(side=ctk.BOTTOM, pady=10)
+        self.middle_frame = ctk.CTkFrame(self.playback_and_display, fg_color = "transparent")
+        self.middle_frame.pack(side=ctk.TOP, anchor = ctk.NW, ipady = 10, padx = 1, fill = X)
+        self.load_button = ctk.CTkButton(self.middle_frame, text="Load Album or Playlist", command=self.load_songs, 
+                                        fg_color="transparent", text_color="black", 
+                                        font=(self.font, 24), hover = False)
+        self.load_button.pack(side=ctk.LEFT, padx = 14, fill = X)
+
+        self.bottom_frame = ctk.CTkFrame(self.playback_and_display, fg_color = "transparent",
+                          border_color="black", border_width=1, corner_radius=0)
+        self.bottom_frame.pack(fill = BOTH, anchor = ctk.NW, expand = True)
 
         self.root.after(100, self.check_for_song_end)
 
@@ -132,8 +141,6 @@ class MusicApplication:
         print(f"Switching to {next_song}")
         self.start_song(next_song)
         
-        
-
 if __name__ == "__main__":
     root = ctk.CTk()
     app = MusicApplication(root)
