@@ -1,4 +1,4 @@
-# Music Application
+# Music Application Notes
 
 ## Install Magick
 
@@ -7,15 +7,32 @@ Allows for the converting of large image formats down to ico format.
 
 ## Setup python virtual environment
 
-## pip install pygame
+## pygame
 
-## tkinter
+``` python
+python -m pip install pygame
+```
 
-### rescources
+## customtkinter
+
+```python
+python -m pip install customtkinter
+```
+
+## PIL
+
+```python
+pip -m pip install pillow
+```
+
+### Resources
+
 ><https://www.tutorialspoint.com/python/python_gui_programming.htm>
 ><https://docs.python.org/3/library/tkinter.html#a-hello-world-program>
 ><https://github.com/TomSchimansky/CustomTkinter/wiki/CTkButton>
+
 ``` python
+
 if __name__ == "__main__":
     root = tk.Tk()
     app = MusicApplication(root)
@@ -27,5 +44,6 @@ Then define the application as an object of a class that defines the app functio
 Lastly the method "mainloop" will keep continually update the app, allowing for input registration and changes.
 
 ## Extra Resources
+
 ><https://www.tutorialspoint.com/python/index.htm>
 ><https://code.visualstudio.com/docs/python/python-tutorial#_next-steps>
