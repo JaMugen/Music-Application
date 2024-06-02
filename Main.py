@@ -1,5 +1,5 @@
-
 import os
+import eyed3
 from xmlrpc.client import Boolean
 import customtkinter as ctk
 from tkinter import N, X, NSEW,filedialog, messagebox
@@ -12,7 +12,7 @@ class MusicApplication:
         self.root.title("Music Application")
         self.root.geometry("600x400")
 
-        self.root.after(0, lambda: root.wm_state('zoomed'))
+        self.root.after(1, lambda: root.wm_state('zoomed'))
 
         ctk.set_appearance_mode("dark")
         self.font = "Convection"
@@ -25,11 +25,12 @@ class MusicApplication:
 
         pygame.mixer.init()
 
-        self.paused = False
+        self.paused = True
         self.previous_song = None
         self.current_song = None
-        self.manually_paused = False
-        self.list = None
+        self.folder_selected = None
+        self.file_list = None
+        self.loop = True
 
         self.background = ctk.CTkImage(dark_image=Image.open(r"Images\Minecraft Wallpaper.jpg"), size=(screen_width, screen_height))
         self.pause_icon = ctk.CTkImage(dark_image=Image.open(r"Icons\pause2.png"), size=(25, 25))
@@ -37,6 +38,8 @@ class MusicApplication:
         self.stop_icon = ctk.CTkImage(dark_image=Image.open(r"Icons\media-playback-stop.256x256.png"), size=(25, 25))
         self.foward_icon = ctk.CTkImage(dark_image=Image.open(r"Icons\set_foward3.png"), size=(25, 25))
         self.backward_icon = ctk.CTkImage(dark_image=Image.open(r"Icons\step_backward_icon.png"), size=(25, 25))
+        self.loop_off_icon = ctk.CTkImage(dark_image=Image.open(r"Icons\loop.png"), size=(25,25))
+        self.loop_track_list_icon = ctk.CTkImage(dark_image=Image.open(r"Icons\loop_track_list.png"), size=(25,25))
 
         self.wallpaper = ctk.CTkLabel(self.root, image=self.background, text="Now Playing", 
                                       font=(self.font, 28), text_color="White")
@@ -64,7 +67,7 @@ class MusicApplication:
         self.pause_and_play_button = ctk.CTkButton(self.playback_menu, image=self.play_icon, command=self.pause_or_play_song, 
                                                    width=80, height=50, border_color="black", border_width=1,
                                                    fg_color="transparent", text="", corner_radius=0, hover_color="lightgreen")
-        self.pause_and_play_button.pack(side = ctk.LEFT, padx = (20,0))
+        self.pause_and_play_button.pack(side = ctk.LEFT, padx = (20,5))
 
         self.backward_button = ctk.CTkButton(self.playback_menu, image=self.backward_icon, command=lambda: self.change_track(backward = True), 
                                          width=80, height=50, border_color="black", border_width=1, 
@@ -81,10 +84,15 @@ class MusicApplication:
                                          fg_color = "transparent" , text="", corner_radius=0, hover_color="lightgreen")
         self.foward_button.pack(side=ctk.LEFT , padx=5)
 
+        self.loop_button = ctk.CTkButton(self.playback_menu, image=self.loop_track_list_icon, command=self.set_loop_value, 
+                                         width=80, height=50, border_color="black", border_width=1, 
+                                         fg_color = "transparent" , text="", corner_radius=0, hover_color="lightgreen")
+        self.loop_button.pack(side=ctk.LEFT , padx=5)
+
         self.middle_frame = ctk.CTkFrame(self.playback_and_display, fg_color = "transparent")
         self.middle_frame.pack(side=ctk.TOP, anchor = ctk.NW, ipady = 10, padx = 1, fill = X)
 
-        self.load_button = ctk.CTkButton(self.middle_frame, text="Load Album or Playlist", command=self.load_songs, 
+        self.load_button = ctk.CTkButton(self.middle_frame, text="Load Album or Playlist", command=self.load_tracks, 
                                         fg_color="transparent", text_color="black", 
                                         font=(self.font, 24), hover_color = "light green", 
                                         hover = True, corner_radius=0)
@@ -98,7 +106,7 @@ class MusicApplication:
                         corner_radius=0)
         self.track_frame.pack(fill = X, anchor = ctk.NW, pady = 1, padx = 1)
 
-        self.track_title = ctk.CTkLabel(self.track_frame, text="Select a song from track list",
+        self.track_title = ctk.CTkLabel(self.track_frame, text="Select a song from track file_list",
                                         fg_color="transparent", font=(self.font, 24), text_color = "Black")
         self.track_title.pack(side = ctk.LEFT, padx = 20, pady = (10,0), anchor = N)
 
@@ -107,25 +115,41 @@ class MusicApplication:
 
         self.root.after(100, self.check_for_song_end)
 
-    def load_songs(self):
+    def get_track_info(self, path = None, get_title = None, get_album_name = None, get_artist = None):
+        if(get_title):
+            audiofile = eyed3.load(path)
+            return audiofile.tag.title
+
+    def set_loop_value(self):
+        if not self.loop:
+            self.loop = True
+            self.loop_button.configure(image = self.loop_track_list_icon)
+        else:
+            self.loop = False
+            self.loop_button.configure(image = self.loop_off_icon)
+    
+    def load_tracks(self):
         folder_selected = filedialog.askdirectory()
+        self.folder_selected = folder_selected
         if folder_selected:
             os.chdir(folder_selected)
             songs = os.listdir(folder_selected)
             for widget in self.track_list.winfo_children():
                 widget.destroy()  
-            self.list = []
+            self.file_list = []
             self.previous_song = None
-            self.track_image = None
             self.current_song = None
             for song in songs:
                 if song.endswith(".mp3"):
-                    song_button = ctk.CTkButton(self.track_list, text=song, 
+                    song_title = self.get_track_info(path = rf"{folder_selected}\{song}", get_title = True)
+                    song_button = ctk.CTkButton(self.track_list, text=song_title, 
                                                 command=lambda s=song: self.start_song(s),
                                                 fg_color="transparent", border_color = "black", border_width= 1, 
-                                                text_color= "black", corner_radius=0, hover_color="lightgreen")
+                                                text_color= "black", corner_radius=0, hover_color="lightgreen"
+                                                ,font=(self.font, 12))
                     song_button.pack(fill = ctk.X)
-                    self.list.append(song)
+                    self.file_list.append(song)
+
             images = songs
             #print(images)
             for image in images:
@@ -155,11 +179,14 @@ class MusicApplication:
             messagebox.showerror("Error", str(e))
 
     def pause_or_play_song(self):
-        if self.paused:
+        if self.paused and self.current_song is not None:
             pygame.mixer.music.unpause()
             self.pause_and_play_button.configure(image=self.pause_icon)
             self.paused = False
-            self.manually_paused = False
+        if self.paused and self.current_song is None:
+            self.start_song(self.track_list.winfo_children()[0].cget("text"))
+            self.pause_and_play_button.configure(image=self.pause_icon)
+            self.paused = False
         else:
             pygame.mixer.music.pause()
             self.pause_and_play_button.configure(image=self.play_icon)
@@ -170,17 +197,19 @@ class MusicApplication:
         self.paused = True
         self.pause_and_play_button.configure(image=self.play_icon)
         self.update_display(self.current_song)
-        self.current_song = None
-        
-        
+        self.current_song = None 
 
     def check_for_song_end(self):
         if not pygame.mixer.music.get_busy() and not self.paused and self.current_song:
-            self.play_next_song()
+            self.play_next_track()
         self.root.after(100, self.check_for_song_end)
 
-    def play_next_song(self):
+    def play_next_track(self): 
         current_selection = [index for index, widget in enumerate(self.track_list.winfo_children()) if widget.cget("text") == self.current_song]
+
+        if self.loop is False and current_selection[0] == len(self.track_list.winfo_children()):
+            return
+                                                  
         if current_selection:
             next_index = (current_selection[0] + 1) % len(self.track_list.winfo_children())
         else:
@@ -202,18 +231,19 @@ class MusicApplication:
         self.start_song(next_song)
 
     def update_display(self, previous = None, current = None):
-        print(previous)
-        self.track_title.configure(text = self.current_song)
+        # print(previous)
+        track_title = self.get_track_info(path = rf"{self.folder_selected}\{self.current_song}", get_title = True)
+        self.track_title.configure(text = track_title)
         if previous is None:
             return
-        self.track_list.winfo_children()[self.list.index(previous)].configure(fg_color = "transparent")
+        self.track_list.winfo_children()[self.file_list.index(previous)].configure(fg_color = "transparent")
         if current is None:
             return
-        self.track_list.winfo_children()[self.list.index(current)].configure(fg_color = "lightgreen")
+        self.track_list.winfo_children()[self.file_list.index(current)].configure(fg_color = "lightgreen")
 
     def change_track(self, foward: Boolean = False, backward: Boolean = False):
         if foward is True:
-            self.play_next_song()
+            self.play_next_track()
         if backward is True:
             self.play_previous_track()
 
