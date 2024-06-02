@@ -1,4 +1,5 @@
 import os
+import string
 import eyed3
 from xmlrpc.client import Boolean
 import customtkinter as ctk
@@ -94,7 +95,7 @@ class MusicApplication:
 
         self.load_button = ctk.CTkButton(self.middle_frame, text="Load Album or Playlist", command=self.load_tracks, 
                                         fg_color="transparent", text_color="black", 
-                                        font=(self.font, 24), hover_color = "light green", 
+                                        font=(self.font, 18), hover_color = "light green", 
                                         hover = True, corner_radius=0)
         self.load_button.pack(side=ctk.LEFT, padx = 20, fill = X)
 
@@ -102,24 +103,35 @@ class MusicApplication:
                           border_color="black", border_width=1, corner_radius=0)
         self.information_frame.pack(fill = ctk.BOTH, anchor = ctk.NW, expand = True)
 
-        self.track_frame = ctk.CTkFrame(self.information_frame, fg_color = "transparent",
+        self.track_title_frame = ctk.CTkFrame(self.information_frame, fg_color = "transparent",
                         corner_radius=0)
-        self.track_frame.pack(fill = X, anchor = ctk.NW, pady = 1, padx = 1)
+        self.track_title_frame.pack(fill = X, anchor = ctk.NW, pady = 1, padx = 1)
 
-        self.track_title = ctk.CTkLabel(self.track_frame, text="Select a song from track file_list",
+        self.track_artist_frame = ctk.CTkFrame(self.information_frame, fg_color = "transparent",
+                        corner_radius=0)
+        self.track_artist_frame.pack(fill = X, anchor = ctk.NW, pady = 1, padx = 1)
+
+        self.track_title = ctk.CTkLabel(self.track_title_frame, text="Select a song from track file_list",
                                         fg_color="transparent", font=(self.font, 24), text_color = "Black")
         self.track_title.pack(side = ctk.LEFT, padx = 20, pady = (10,0), anchor = N)
-
+        self.track_artist = ctk.CTkLabel(self.track_artist_frame, text="",
+                                        fg_color="transparent", font=(self.font, 24), text_color = "Black")
+        self.track_artist.pack(side = ctk.LEFT, padx = 20, pady = (10,0), anchor = N)
         self.track_image = ctk.CTkLabel(self.information_frame, text="", fg_color="transparent")
         self.track_image.pack(side = ctk.LEFT, padx = 20)
 
         self.root.after(100, self.check_for_song_end)
 
-    def get_track_info(self, path = None, get_title = None, get_album_name = None, get_artist = None):
+    def get_track_info(self, path: string = None, get_title: Boolean = None, get_album_name: Boolean = None, get_artist: Boolean = None):
+        audiofile = eyed3.load(path)
         if(get_title):
-            audiofile = eyed3.load(path)
             return audiofile.tag.title
-
+        if(get_artist):
+            return audiofile.tag.artist
+        if(get_album_name):
+            if len(audiofile.tag.album) > 50:
+                return audiofile.tag.album[:50]
+            return audiofile.tag.album
     def set_loop_value(self):
         if not self.loop:
             self.loop = True
@@ -137,6 +149,8 @@ class MusicApplication:
             for widget in self.track_list.winfo_children():
                 widget.destroy()  
             self.file_list = []
+            self.song_title_to_song = {}
+            self.song_to_song_title = {}
             self.previous_song = None
             self.current_song = None
             for song in songs:
@@ -149,7 +163,6 @@ class MusicApplication:
                                                 ,font=(self.font, 12))
                     song_button.pack(fill = ctk.X)
                     self.file_list.append(song)
-
             images = songs
             #print(images)
             for image in images:
@@ -157,6 +170,7 @@ class MusicApplication:
                     print(image)
                     self.track_image.configure(image=ctk.CTkImage(Image.open(image), size=(250,250)))
                     break
+        self.load_button.configure(text = self.get_track_info(path = rf"{folder_selected}\{self.file_list[0]}", get_album_name = True))
 
     def on_song_select(self, event):
         selected_song = event.widget.cget("text")
@@ -164,19 +178,18 @@ class MusicApplication:
             self.start_song(selected_song)
 
     def start_song(self, song):
-        try:
-            if song != self.current_song:
+        if song != self.current_song:
+            self.previous_song = self.current_song
+            self.current_song = song
+            if self.previous_song is None:
                 self.previous_song = self.current_song
-                self.current_song = song
-                if self.previous_song is None:
-                    self.previous_song = self.current_song
-                pygame.mixer.music.load(song)
-                print(f"Starting {self.current_song}")
-                pygame.mixer.music.play()
-                self.pause_and_play_button.configure(image=self.pause_icon)
-                self.update_display(self.previous_song, self.current_song)
-        except Exception as e:
-            messagebox.showerror("Error", str(e))
+            pygame.mixer.music.load(song)
+            print(f"Starting {self.current_song}")
+            pygame.mixer.music.play()
+            self.pause_and_play_button.configure(image=self.pause_icon)
+            self.paused = False
+            self.update_display(self.previous_song, self.current_song)
+          
 
     def pause_or_play_song(self):
         if self.paused and self.current_song is not None:
@@ -200,40 +213,52 @@ class MusicApplication:
         self.current_song = None 
 
     def check_for_song_end(self):
-        if not pygame.mixer.music.get_busy() and not self.paused and self.current_song:
+        if pygame.mixer.music.get_busy() is False and self.paused is False and self.current_song:
             self.play_next_track()
         self.root.after(100, self.check_for_song_end)
 
-    def play_next_track(self): 
-        current_selection = [index for index, widget in enumerate(self.track_list.winfo_children()) if widget.cget("text") == self.current_song]
+    def play_next_track(self):
+        current_title = self.get_track_info(self.current_song, get_title=True)
 
-        if self.loop is False and current_selection[0] == len(self.track_list.winfo_children()):
+        current_selection = [index for index, widget in enumerate(self.track_list.winfo_children()) if widget.cget("text") == current_title]
+        
+        if self.loop is False and current_selection[0] == len(self.track_list.winfo_children()) - 1:
             return
-                                                  
+                                              
         if current_selection:
             next_index = (current_selection[0] + 1) % len(self.track_list.winfo_children())
         else:
             next_index = 0
-        next_song_button = self.track_list.winfo_children()[next_index]
-        next_song = next_song_button.cget("text")
+        
+        next_song = self.file_list[next_index]
         print(f"Switching to {next_song}")
         self.start_song(next_song)
+        #print(self.file_list)
     
     def play_previous_track(self):
-        current_selection = [index for index, widget in enumerate(self.track_list.winfo_children()) if widget.cget("text") == self.current_song]
+        current_title = self.get_track_info(self.current_song, get_title=True)
+        
+        current_selection = [index for index, widget in enumerate(self.track_list.winfo_children()) if widget.cget("text") == current_title]
+        if self.loop is False and current_selection[0] == 0:
+            return
+        
         if current_selection:
             next_index = (current_selection[0] - 1) % len(self.track_list.winfo_children())
         else:
             next_index = 0
-        next_song_button = self.track_list.winfo_children()[next_index]
-        next_song = next_song_button.cget("text")
+        next_song = self.file_list[next_index]
         print(f"Switching to {next_song}")
         self.start_song(next_song)
 
     def update_display(self, previous = None, current = None):
         # print(previous)
-        track_title = self.get_track_info(path = rf"{self.folder_selected}\{self.current_song}", get_title = True)
+        track_path = rf"{self.folder_selected}\{self.current_song}"
+        track_title = self.get_track_info(path = track_path, get_title = True)
+
         self.track_title.configure(text = track_title)
+        track_artist = self.get_track_info(path = track_path, get_artist = True)
+        self.track_artist.configure(text = track_artist)
+
         if previous is None:
             return
         self.track_list.winfo_children()[self.file_list.index(previous)].configure(fg_color = "transparent")
