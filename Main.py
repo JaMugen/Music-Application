@@ -3,7 +3,7 @@ import string
 import eyed3
 from xmlrpc.client import Boolean
 import customtkinter as ctk
-from tkinter import N, X, NSEW,filedialog, messagebox
+from tkinter import N, X, NSEW,filedialog
 import pygame
 from PIL import Image
 
@@ -42,8 +42,7 @@ class MusicApplication:
         self.loop_off_icon = ctk.CTkImage(dark_image=Image.open(r"Icons\loop.png"), size=(25,25))
         self.loop_track_list_icon = ctk.CTkImage(dark_image=Image.open(r"Icons\loop_track_list.png"), size=(25,25))
 
-        self.wallpaper = ctk.CTkLabel(self.root, image=self.background, text="Now Playing", 
-                                      font=(self.font, 28), text_color="White")
+        self.wallpaper = ctk.CTkLabel(self.root, image=self.background)
         self.wallpaper.grid(row=0, column=0, columnspan=4, rowspan=3)
 
         self.main_frame = ctk.CTkFrame(self.root, fg_color="white")
@@ -132,6 +131,7 @@ class MusicApplication:
             if len(audiofile.tag.album) > 50:
                 return audiofile.tag.album[:50]
             return audiofile.tag.album
+
     def set_loop_value(self):
         if not self.loop:
             self.loop = True
@@ -149,8 +149,6 @@ class MusicApplication:
             for widget in self.track_list.winfo_children():
                 widget.destroy()  
             self.file_list = []
-            self.song_title_to_song = {}
-            self.song_to_song_title = {}
             self.previous_song = None
             self.current_song = None
             for song in songs:
@@ -170,12 +168,7 @@ class MusicApplication:
                     print(image)
                     self.track_image.configure(image=ctk.CTkImage(Image.open(image), size=(250,250)))
                     break
-        self.load_button.configure(text = self.get_track_info(path = rf"{folder_selected}\{self.file_list[0]}", get_album_name = True))
-
-    def on_song_select(self, event):
-        selected_song = event.widget.cget("text")
-        if selected_song:
-            self.start_song(selected_song)
+        self.load_button.configure(text = self.get_track_info(path = rf"{self.folder_selected}\{self.file_list[0]}", get_album_name = True))
 
     def start_song(self, song):
         if song != self.current_song:
@@ -192,12 +185,13 @@ class MusicApplication:
           
 
     def pause_or_play_song(self):
-        if self.paused and self.current_song is not None:
+        print(self.paused)
+        if self.paused and self.current_song:
             pygame.mixer.music.unpause()
             self.pause_and_play_button.configure(image=self.pause_icon)
             self.paused = False
-        if self.paused and self.current_song is None:
-            self.start_song(self.track_list.winfo_children()[0].cget("text"))
+        elif self.paused and self.current_song is None:
+            self.start_song(self.file_list[0])
             self.pause_and_play_button.configure(image=self.pause_icon)
             self.paused = False
         else:
@@ -223,6 +217,7 @@ class MusicApplication:
         current_selection = [index for index, widget in enumerate(self.track_list.winfo_children()) if widget.cget("text") == current_title]
         
         if self.loop is False and current_selection[0] == len(self.track_list.winfo_children()) - 1:
+            self.stop_song(self)
             return
                                               
         if current_selection:
@@ -239,7 +234,9 @@ class MusicApplication:
         current_title = self.get_track_info(self.current_song, get_title=True)
         
         current_selection = [index for index, widget in enumerate(self.track_list.winfo_children()) if widget.cget("text") == current_title]
+
         if self.loop is False and current_selection[0] == 0:
+            self.stop_song(self)
             return
         
         if current_selection:
