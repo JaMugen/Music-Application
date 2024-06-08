@@ -1,4 +1,4 @@
-# Music Player Notes
+# Version 1 Music Player Notes
 
 ## Install Magick(Was not used yet.)
 
