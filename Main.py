@@ -12,6 +12,7 @@ class MusicApplication:
         self.root = root
         self.root.title("Music Application")
         self.root.geometry("600x400")
+        self.root.iconbitmap(r"Icons\dvd_19098.ico")
 
         self.root.after(1, lambda: root.wm_state('zoomed'))
 
